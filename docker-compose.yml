@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  frontend:
+    build: ./frontend
+    container_name: detectoclassif_front
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    container_name: detectoclassif_back
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./data/tmp:/tmp/jobs
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  worker:
+    build: ./backend
+    container_name: detecto_worker
+    command: celery -A app.worker worker --loglevel=info
+    volumes:
+      - ./backend:/app
+      - ./data/tmp:/tmp/jobs
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7
+    container_name: detecto_redis
+    ports:
+      - "6379:6379"
