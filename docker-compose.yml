@@ -1,18 +1,4 @@
-version: "3.9"
-
 services:
-  frontend:
-    build: ./frontend
-    container_name: detectoclassif_front
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-    environment:
-      - VITE_API_URL=http://localhost:8000
-    depends_on:
-      - backend
-
   backend:
     build: ./backend
     container_name: detectoclassif_back
@@ -25,6 +11,19 @@ services:
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - redis
+
+  web:
+    build: ./ui
+    container_name: detectoclassif_front
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
 
   worker:
     build: ./backend

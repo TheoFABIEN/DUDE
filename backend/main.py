@@ -1,14 +1,16 @@
-# main.py
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import zipfile
 import os
 import tempfile
-from FlatbugDetection import load_model, predict
 from PIL import Image
 import base64
 from io import BytesIO
+from torch import cuda, serialization
+
+from FlatbugDetection import load_model, load_model_cpu, predict, predict_cpu
+#from BioclipClassification import load_classifier, classify_boxes
 
 app = FastAPI(title="DetectoClassif Backend - Flatbug Only")
 app.add_middleware(
@@ -21,7 +23,9 @@ app.add_middleware(
 
 DEVICE = "cuda:0"
 
+
 load_model(DEVICE)
+load_model_cpu()
 
 @app.post("/upload")
 async def upload_zip(file: UploadFile = File(...)):
@@ -44,7 +48,14 @@ async def upload_zip(file: UploadFile = File(...)):
                 buffered = BytesIO()
                 img.save(buffered, format="JPEG")
                 img_base64 = base64.b64encode(buffered.getvalue()).decode()
-                pred = predict(img)
+                cuda.empty_cache()
+                try:
+                    pred = predict(img)
+                except cuda.OutOfMemoryError:
+                    cuda.empty_cache()
+                    pred = predict_cpu(img)
+                boxes = pred["boxes"]
+                #classes = classify_boxes(img, boxes)
                 images_output.append({
                     "image": img_base64,
                     "boxes": pred["boxes"]

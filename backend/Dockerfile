@@ -1,15 +1,9 @@
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
-
-ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+FROM python:3.13
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git python3.11 python3.11-dev python3-pip build-essential \
-    libglib2.0-0 libgl1-mesa-glx libsm6 libxext6 \
+    git \
+    libglib2.0-0 libgl1 libglx-mesa0 libsm6 libxext6 \
     && rm -rf /var/lib/apt/lists/*
-
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
 
 WORKDIR /workspace
 
