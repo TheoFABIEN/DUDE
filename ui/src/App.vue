@@ -25,9 +25,8 @@ async function handleUpload(file) {
 </template>
 
 
-<style>
+<style scoped>
 .app-container {
-  font-family: Arial, sans-serif;
   padding: 20px;
   max-width: 900px;
   margin: auto;

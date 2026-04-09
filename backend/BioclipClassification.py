@@ -1,8 +1,8 @@
 from bioclip import TreeOfLifeClassifier, Rank
 from PIL import Image
 
+TOP_K = 5
 classifier = None
-TOP_K = 5 # keep top 5 predictions
 
 def load_classifier():
     global classifier
@@ -35,17 +35,24 @@ def classifyBoxes(pil_boxes):
     Inputs:
         - boxes(list): list of cropped bounding boxes in PIL format.
     Returns:
-        - list
+        - list of dict
     """
-    result = classifier.predict(pil_boxes)
     output = []
-    for r in result:
+    all_predictions = classifier.predict(
+        pil_boxes,
+        rank = Rank.SPECIES
+    )
+    for i in range(len(pil_boxes)):
+        preds = all_predictions[i * TOP_K : (i + 1) * TOP_K]
         topk = [
-            (r.label[i], float(r.prob[i])) 
-            for i in range(min(TOP_K, len(r.label)))
+            (p["species"], float(p["score"]))
+            for p in preds
         ]
         best_class = topk[0][0] if topk else None
-        output.append({"pred": best_class, "top_k": topk})
+        output.append({
+            "pred": best_class,
+            "top_k": topk
+        })
     return output
 
 

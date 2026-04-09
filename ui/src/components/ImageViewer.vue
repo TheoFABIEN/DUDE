@@ -1,53 +1,80 @@
+<script setup>
+defineProps({
+  images: Array
+})
+</script>
+
 <template>
   <div class="image-viewer">
-    <div v-for="img in images" :key="img.filename" class="image-card">
-      <canvas :ref="el => drawImage(el, img)"></canvas>
-      <p>{{ img.filename }}</p>
+    <div v-for="(img, index) in images" :key="index" class="image-block">
+
+      <img
+        :src="'data:image/jpeg;base64,' + img.image"
+        class="main-image"
+      />
+
+      <div class="objects">
+        <div
+          v-for="(obj, i) in img.objects"
+          :key="i"
+          class="object-row"
+        >
+          <img
+            :src="'data:image/jpeg;base64,' + obj.crop"
+            class="crop"
+          />
+
+          <div class="info">
+            <strong>{{ obj.pred }}</strong>
+
+            <div class="topk">
+              <div v-for="(t, k) in obj.top_k" :key="k">
+                {{ t[0] }} — {{ t[1].toFixed(3) }}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
 
-<script setup>
-import {onMounted} from 'vue'
-defineProps({
-    images: Array
-})
-
-function drawImage(canvas, imgData) {
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    const image = new Image()
-    image.onload = () => {
-        canvas.width = image.width
-        canvas.height = image.height
-        ctx.drawImage(image, 0, 0)
-
-        imgData.boxes.forEach(box => {
-            const [x1, y1, x2, y2] = box
-            const w = x2 - x1
-            const h = y2 - y1
-
-            ctx.strokeStyle = 'red'
-            ctx.lineWidth = 20
-            ctx.strokeRect(x1, y1, w, h)
-            ctx.fillStyle = 'red'
-        });
-    }
-    image.src = `data:image/jpeg;base64,${imgData.image}`
-}
-</script>
-
 <style>
 .image-viewer {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 15px;
+  color: var(--ui-amber);
 }
-.image-card {
-  border: 1px solid #ddd;
-  padding: 10px;
+.image-block {
+  margin-bottom: 30px;
 }
-canvas {
-  width: 100%;
+
+.main-image {
+  max-width: 400px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.object-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.crop {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+}
+
+.info {
+  font-size: 14px;
+}
+
+.topk {
+  font-size: 12px;
+  color: var(--ui-grey);
 }
 </style>

@@ -14,6 +14,10 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel && \
 RUN git clone https://github.com/darsa-group/flat-bug.git /flat-bug && \
     python3 -m pip install --no-cache-dir -e /flat-bug
 
+RUN python3 -m pip install pybioclip
+
 COPY . .
+
+ENV TORCH_FORCE_WEIGHTS_ONLY_LOAD=0
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

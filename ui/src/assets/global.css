@@ -1,0 +1,22 @@
+:root {
+    --ui-pearl: #E6EDF3;
+    --ui-anthracite: #161b22;
+    --ui-grey: #8B949E;
+    --ui-darkblue: #0D1117;
+    --ui-green: #2ECC71;
+    --ui-amber: #FFB347;
+}
+
+body {
+    background-color: var(--ui-darkblue);
+    color: var(--ui-pearl); 
+    font-family: sans-serif;
+    font-size: 14px;
+}
+
+label {
+    background-color: var(--ui-grey);
+}
+label:hover {
+    background-color: var(--ui-green);
+}
