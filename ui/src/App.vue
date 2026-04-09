@@ -18,7 +18,7 @@ async function handleUpload(file) {
 
 <template>
   <div class="app-container">
-    <HeaderBar />
+    <HeaderBar :results="results" />
     <UploadZone @files-uploaded="handleUpload" />
     <ResultsPanel :results="results" />
   </div>

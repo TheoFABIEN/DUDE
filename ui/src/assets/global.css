@@ -18,5 +18,5 @@ label {
     background-color: var(--ui-grey);
 }
 label:hover {
-    background-color: var(--ui-green);
+    background-color: var(--ui-amber);
 }

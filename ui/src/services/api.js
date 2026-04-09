@@ -9,3 +9,15 @@ export async function uploadZip(file) {
 
   return response.json()
 }
+
+export async function downloadResults(results) {
+  const response = await fetch('http://localhost:8000/download', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(results)
+  })
+
+  return await response.blob()
+}

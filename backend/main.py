@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+import json
 import zipfile
 import os
 import tempfile
@@ -69,6 +70,7 @@ async def upload_zip(file: UploadFile = File(...)):
                 for box, cls in zip(boxes, classes):
                     crop_b64 = crop_to_base64(img, box)
                     objects.append({
+                        "bbox": box,
                         "crop": crop_b64,
                         "pred": cls["pred"],
                         "top_k": cls["top_k"]
@@ -84,3 +86,31 @@ async def upload_zip(file: UploadFile = File(...)):
             return {"status": "novalidinput"}
 
     return {"status": "done", "pred_output": results}
+
+
+@app.post("/download")
+async def download_results(data: dict):
+    """
+    Returns the results as a .zip file containing JSON text files.
+    """
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for i, img in enumerate(data["pred_output"]):
+            json_data = {
+                "image_index": i,
+                "objects": []
+            }
+            for obj in img["objects"]:
+                json_data["objects"].append({
+                    "bbox": obj.get("bbox", None),
+                    "pred": obj["pred"],
+                    "confidence": obj["top_k"][0][1] if obj["top_k"] else None,
+                    "top_k": obj["top_k"]
+                })
+            zf.writestr(f"image_{i}.json", json.dumps(json_data, indent=2))
+    buffer.seek(0)
+    return StreamingResponse(
+        buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=results.zip"}
+    )

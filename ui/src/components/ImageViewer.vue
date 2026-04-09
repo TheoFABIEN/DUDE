@@ -1,43 +1,47 @@
 <script setup>
 defineProps({
-  images: Array
+  image: Object
 })
 </script>
 
 <template>
   <div class="image-viewer">
-    <div v-for="(img, index) in images" :key="index" class="image-block">
 
-      <img
-        :src="'data:image/jpeg;base64,' + img.image"
-        class="main-image"
-      />
+    <transition name="slide" mode="out-in">
+      <div :key="image.image">
 
-      <div class="objects">
-        <div
-          v-for="(obj, i) in img.objects"
-          :key="i"
-          class="object-row"
-        >
-          <img
-            :src="'data:image/jpeg;base64,' + obj.crop"
-            class="crop"
-          />
+        <img
+          :src="'data:image/jpeg;base64,' + image.image"
+          class="main-image"
+        />
 
-          <div class="info">
-            <strong>{{ obj.pred }}</strong>
+        <div class="objects">
+          <div
+            v-for="(obj, i) in image.objects"
+            :key="i"
+            class="object-row"
+          >
+            <img
+              :src="'data:image/jpeg;base64,' + obj.crop"
+              class="crop"
+            />
 
-            <div class="topk">
-              <div v-for="(t, k) in obj.top_k" :key="k">
-                {{ t[0] }} — {{ t[1].toFixed(3) }}
+            <div class="info">
+              <strong>{{ obj.pred }}</strong>
+
+              <div class="topk">
+                <div v-for="(t, k) in obj.top_k" :key="k">
+                  {{ t[0] }} — {{ t[1].toFixed(3) }}
+                </div>
               </div>
-            </div>
 
+            </div>
           </div>
         </div>
-      </div>
 
-    </div>
+      </div>
+    </transition>
+
   </div>
 </template>
 
@@ -45,22 +49,11 @@ defineProps({
 .image-viewer {
   color: var(--ui-amber);
 }
-.image-block {
-  margin-bottom: 30px;
-}
-
 .main-image {
   max-width: 400px;
   display: block;
   margin-bottom: 10px;
 }
-
-.object-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
 .crop {
   width: 80px;
   height: 80px;
@@ -68,11 +61,24 @@ defineProps({
   margin-right: 10px;
   border: 1px solid #ccc;
 }
-
-.info {
-  font-size: 14px;
+.object-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-enter-from {
+  transform: translateX(50px);
+  opacity: 0;
+}
+.slide-leave-to {
+  transform: translateX(-50px);
+  opacity: 0;
+}
 .topk {
   font-size: 12px;
   color: var(--ui-grey);

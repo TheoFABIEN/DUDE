@@ -60,7 +60,7 @@ function onFileChange(event) {
 .active-dropzone {
   color: #fff;
   border-color: #fff;
-  background-color: var(--ui-anthracite);
+  background-color: var(--ui-amber);
 }
 .upload-zone label {
   padding: 8px 12px;

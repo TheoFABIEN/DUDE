@@ -1,14 +1,41 @@
 <script setup>
-import ImageViewer from './ImageViewer.vue';
-defineProps({
+import { ref, watch } from 'vue'
+import ImageViewer from './ImageViewer.vue'
+
+const props = defineProps({
   results: Object
 })
+
+const currentIndex = ref(0)
+
+watch(() => props.results, () => {
+  currentIndex.value = 0
+})
+
+function prev() {
+  if (currentIndex.value > 0) {
+    currentIndex.value--
+  }
+}
+function next() {
+  if (currentIndex.value < props.results.pred_output.length - 1) {
+    currentIndex.value++
+  }
+}
 </script>
 
 
 <template>
   <div class="results-panel">
-    <h2>Results</h2>
+    <div class="header">
+      <h2>Results</h2>
+
+      <div v-if="results?.status === 'done'" class="nav-buttons">
+        <button @click="prev">&lt;</button>
+        <span>{{ currentIndex + 1 }} / {{ results.pred_output.length }}</span>
+        <button @click="next">&gt;</button>
+      </div>
+    </div>
 
     <div v-if="!results">
       Nothing to show
@@ -18,19 +45,35 @@ defineProps({
     </div>
 
     <div v-else-if="results.status === 'done'">
-      <ImageViewer :images="results.pred_output" />
+      <ImageViewer :image="results.pred_output[currentIndex]" />
     </div>
+
     <div v-else-if="results.status === 'novalidinput'">
-      No valid images found in the provided zip file.
+      No valid images found.
     </div>
   </div>
 </template>
 
-
 <style>
-.results-panel {
-  border-top: 1px solid #ddd;
-  padding-top: 20px;
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  button {
+    color: var(--ui-pearl);
+    font-weight: bold;
+    background-color: var(--ui-darkblue); 
+    border: none;
+  }
+}
+button {
+  padding: 5px 10px;
+  cursor: pointer;
 }
 .loader {
   width: fit-content;
@@ -45,5 +88,4 @@ defineProps({
   content:"Loading..."
 }
 @keyframes l2 {to{background-size: 100% 3px}}
-
 </style>

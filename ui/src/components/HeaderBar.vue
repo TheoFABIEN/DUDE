@@ -1,13 +1,43 @@
-<style>
-.header {
-  text-align: center;
-  margin-bottom: 20px;
+<script setup>
+import { downloadResults } from '@/services/api'
+
+const props = defineProps({
+  results: Object
+})
+
+async function download() {
+  const blob = await downloadResults(props.results)
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'results.zip'
+  a.click()
+  window.URL.revokeObjectURL(url)
 }
-</style>
+</script>
+
 
 <template>
   <header class="header">
     <h1>Detectron 4000 : classificator edition</h1>
-    <p>The one and only</p>
+    <div v-if="props.results?.status === 'done'" class="actions">
+      <button @click="download">Download results</button>
+    </div>
   </header>
 </template>
+
+
+<style scoped>
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+button {
+  color: var(--ui-pearl);
+  background-color: var(--ui-grey);
+  border: none;
+}
+button:hover {
+  background-color: var(--ui-amber);
+}
+</style>
