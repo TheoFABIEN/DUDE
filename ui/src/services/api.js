@@ -1,8 +1,9 @@
+export const BASE_URL = "/api"
+
 export async function uploadZip(file) {
   const formData = new FormData()
   formData.append('file', file)
-
-  const response = await fetch('http://localhost:8000/upload', {
+  const response = await fetch(`${BASE_URL}/upload`, {
     method: 'POST',
     body: formData
   })
@@ -11,7 +12,7 @@ export async function uploadZip(file) {
 }
 
 export async function downloadResults(results) {
-  const response = await fetch('http://localhost:8000/download', {
+  const response = await fetch(`${BASE_URL}/download`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

@@ -1,44 +1,24 @@
 services:
-  backend:
+  api:
     build: ./backend
     container_name: detectoclassif_back
-    ports:
-      - "8000:8000"
     volumes:
       - ./backend:/app
       - ./data/tmp:/tmp/jobs
     environment:
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - redis
+      - HF_TOKEN=${HF_TOKEN:-}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   web:
     build: ./ui
     container_name: detectoclassif_front
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-    environment:
-      - VITE_API_URL=http://localhost:8000
+      - 3000:80 
     depends_on:
-      - backend
-
-
-  worker:
-    build: ./backend
-    container_name: detecto_worker
-    command: celery -A app.worker worker --loglevel=info
-    volumes:
-      - ./backend:/app
-      - ./data/tmp:/tmp/jobs
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - redis
-
-  redis:
-    image: redis:7
-    container_name: detecto_redis
-    ports:
-      - "6379:6379"
+      - api

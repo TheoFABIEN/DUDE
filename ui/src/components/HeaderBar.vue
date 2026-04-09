@@ -19,7 +19,7 @@ async function download() {
 
 <template>
   <header class="header">
-    <h1>Detectron 4000 : classificator edition</h1>
+    <h1>Detectron 4000</h1>
     <div v-if="props.results?.status === 'done'" class="actions">
       <button @click="download">Download results</button>
     </div>

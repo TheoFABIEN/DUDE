@@ -24,10 +24,16 @@ app.add_middleware(
 
 DEVICE = "cuda:0"
 
-
-load_model(DEVICE)
-load_model_cpu()
-load_classifier()
+@app.on_event("startup")
+async def startup():
+    print("Loading models...")
+    load_model(DEVICE)
+    print("Model 1/3 loaded")
+    load_model_cpu()
+    print("Model 2/3 loaded")
+    load_classifier()
+    print("Model 3/3 loaded")
+    print("READY")
 
 
 def crop_to_base64(img, box):
