@@ -10,9 +10,8 @@ import shutil
 import uuid
 import tempfile
 from PIL import Image
-import base64
 from io import BytesIO
-from torch import cuda, serialization
+from torch import cuda
 
 from FlatbugDetection import load_model, load_model_cpu, predict, predict_cpu
 from BioclipClassification import load_classifier, classify_boxes
