@@ -1,3 +1,8 @@
+"""
+Functions to handle object detection using Flatbug.
+"""
+
+
 from flat_bug.predictor import Predictor
 from torchvision.transforms.functional import pil_to_tensor
 

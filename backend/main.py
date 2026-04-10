@@ -1,3 +1,9 @@
+"""
+Main entrypoint for the detection/classification backend.
+Handles image detection and classification using Flatbug and Bioclip2, via 
+ZIP uploads.
+"""
+
 import time
 import json
 import zipfile
@@ -36,9 +42,7 @@ app.mount("/static", StaticFiles(directory=OUTPUT_DIR), name="static")
 
 
 def cleanup_old_jobs():
-    """
-    Deletes files older than MAX_AGE_SECONDS
-    """
+    """ Deletes files older than MAX_AGE_SECONDS """
     now = time.time()
     if not os.path.exists(OUTPUT_DIR):
         return
@@ -52,12 +56,45 @@ def cleanup_old_jobs():
                 else:
                     os.remove(item_path)
                 print(f"GC: Cleaning of {item_path} done.")
-            except Exception as e:
+            except OSError as e:
                 print(f"GC: Error while cleaning {item_path}: {e}")
+
+def process_single_image(fpath, fname, i, job_path, job_id):
+    """ Helper to process an individual image """
+    img = Image.open(fpath).convert("RGB")
+    img_filename = f"img_{i}.jpg"
+    img.save(os.path.join(job_path, img_filename), "JPEG")
+
+    cuda.empty_cache()
+    try:
+        pred = predict(img)
+    except cuda.OutOfMemoryError:
+        cuda.empty_cache()
+        pred = predict_cpu(img)
+
+    boxes = pred["boxes"]
+    classes = classify_boxes(img, boxes)
+    objects = []
+    for j, (box, cls) in enumerate(zip(boxes, classes)):
+        crop_name = f"crop_{i}_{j}.jpg"
+        x_1, y_1, x_2, y_2 = box
+        img.crop((x_1, y_1, x_2, y_2)).save(os.path.join(job_path, crop_name), "JPEG")
+        objects.append({
+            "bbox": box,
+            "crop_url": f"/api/static/{job_id}/{crop_name}",
+            "pred": cls["pred"],
+            "top_k": cls["top_k"]
+        })
+    
+    return {
+        "image_url": f"/api/static/{job_id}/{img_filename}",
+        "objects": objects
+    }
 
 
 @app.on_event("startup")
 async def startup():
+    """ Initializes models and sets application state to ready. """
     global READY
     print("Loading models...")
     load_model(DEVICE)
@@ -69,6 +106,7 @@ async def startup():
 
 @app.get("/health")
 def health():
+    """ Checks if the models are loaded and the service is ready."""
     if READY:
         return {"status": "ready"}
     return JSONResponse(status_code=503, content={"status": {"loading"}})
@@ -76,10 +114,7 @@ def health():
 
 @app.post("/upload")
 async def upload_zip(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
-    """
-    Extracts infos from zip file and runs inference for detection and classification.
-    """
-
+    """Extracts zip, runs inference, and returns detection results."""
     background_tasks.add_task(cleanup_old_jobs)
 
     if not file.filename.endswith(".zip"):
@@ -89,52 +124,23 @@ async def upload_zip(background_tasks: BackgroundTasks, file: UploadFile = File(
     job_path = os.path.join(OUTPUT_DIR, job_id)
     os.makedirs(job_path, exist_ok=True)
 
+    results = []
     with tempfile.TemporaryDirectory() as tmpdir:
         zip_path = os.path.join(tmpdir, "upload.zip")
-        with open(zip_path, "wb") as f:
-            f.write(await file.read())
+        with open(zip_path, "wb") as buffer:
+            buffer.write(await file.read())
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(tmpdir)
 
-        results = []
         for i, fname in enumerate(os.listdir(tmpdir)):
             fpath = os.path.join(tmpdir, fname)
             if fname.lower().endswith((".png", ".jpg", ".jpeg")):
-                img = Image.open(fpath).convert("RGB")
-                img_filename = f"img_{i}.jpg"
-                img_save_path = os.path.join(job_path, img_filename)
-                img.save(img_save_path, "JPEG")
-                cuda.empty_cache()
-                try:
-                    pred = predict(img)
-                except cuda.OutOfMemoryError:
-                    cuda.empty_cache()
-                    pred = predict_cpu(img)
-                boxes = pred["boxes"]
-                classes = classify_boxes(img, boxes)
+                img_results = process_single_image(fpath, fname, i, job_path, job_id)
+                results.append(img_results)
 
-                objects = []
-                for j, (box, cls) in enumerate(zip(boxes, classes)):
-                    crop_filename = f"crop_{i}_{j}.jpg"
-                    crop_save_path = os.path.join(job_path, crop_filename)
-                    x1, y1, x2, y2 = box
-                    img.crop((x1, y1, x2, y2)).save(crop_save_path, "JPEG")
-                    objects.append({
-                        "bbox": box,
-                        "crop_url": f"/api/static/{job_id}/{crop_filename}",
-                        "pred": cls["pred"],
-                        "top_k": cls["top_k"]
-                    })
-                    print("BOX: ", box)
-                    print("CLASS: ", cls)
-                results.append({
-                    "image_url": f"/api/static/{job_id}/{img_filename}",
-                    "objects": objects
-                })
-
-        if not results:
-            return {"status": "novalidinput"}
+    if not results:
+        return {"status": "novalidinput"}
 
     return {"status": "done", "pred_output": results}
 

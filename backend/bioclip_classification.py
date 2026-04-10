@@ -1,3 +1,7 @@
+"""
+Functions to handle bounding boxes classification using Bioclip2.
+"""
+
 from bioclip import TreeOfLifeClassifier, Rank
 
 TOP_K = 5
