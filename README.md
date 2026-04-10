@@ -1,16 +1,25 @@
+<p align="center">
+  <h1 align="center">D.U.D.E.</h1>
+  <p align="center">
+    <i align="center">Digital unified detection for entomologists</i>
+  </p>
+</p>
+
+<br> <br>
+
 This app leverages Flatbug and BioClip2 te detect and identify insect species.
 
 
-## How to use
+## Quick start
 
 Install using Docker compose. After cloning the repo, just enter the command:
 
   <code>docker compose up -d</code>
 
-For faster download of the models, I recommend using a HuggingFace token. First, create a .env file from the .env.example file:
+The models can take several minutes to download. For faster download of the models, I recommend using a HuggingFace token (create one here: [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)). First, create a .env file from the .env.example file:
 
   <code>cp .env.example .env</code>
 
 Then, add your token into the .env file.
 
-To create a new HuggingFace token, go here : [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
+After initial configuration, the app can be accessed locally here: [http://localhost:3000/](http://localhost:3000/)
