@@ -5,16 +5,16 @@ import os
 import shutil
 import uuid
 import tempfile
-from PIL import Image
 from io import BytesIO
+from PIL import Image
 from torch import cuda
 from fastapi import FastAPI, File, UploadFile, BackgroundTasks
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from FlatbugDetection import load_model, load_model_cpu, predict, predict_cpu
-from BioclipClassification import load_classifier, classify_boxes
+from flatbug_detection import load_model, load_model_cpu, predict, predict_cpu
+from bioclip_classification import load_classifier, classify_boxes
 
 
 DEVICE = "cuda:0"
@@ -76,6 +76,9 @@ def health():
 
 @app.post("/upload")
 async def upload_zip(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    """
+    Extracts infos from zip file and runs inference for detection and classification.
+    """
 
     background_tasks.add_task(cleanup_old_jobs)
 
