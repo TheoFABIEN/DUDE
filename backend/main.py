@@ -87,6 +87,7 @@ def process_single_image(fpath, fname, i, job_path, job_id):
         })
     
     return {
+        "image_name": fname,
         "image_url": f"/api/static/{job_id}/{img_filename}",
         "objects": objects
     }
@@ -153,8 +154,11 @@ async def download_results(data: dict):
     buffer = BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         for i, img in enumerate(data["pred_output"]):
+            image_name = img.get("image_name", "unknown.jpg")
+            base_name = os.path.splitext(os.path.basename(image_name))[0]
+            json_filename = f"{base_name}.json"
             json_data = {
-                "image_index": i,
+                "image_name": image_name,
                 "objects": []
             }
             for obj in img["objects"]:
@@ -164,7 +168,7 @@ async def download_results(data: dict):
                     "confidence": obj["top_k"][0][1] if obj["top_k"] else None,
                     "top_k": obj["top_k"]
                 })
-            zf.writestr(f"image_{i}.json", json.dumps(json_data, indent=2))
+            zf.writestr(json_filename, json.dumps(json_data, indent=2))
     buffer.seek(0)
     return StreamingResponse(
         buffer,
