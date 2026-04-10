@@ -1,16 +1,18 @@
 from bioclip import TreeOfLifeClassifier, Rank
-from PIL import Image
 
 TOP_K = 5
 classifier = None
 
 def load_classifier():
+    """
+    Loads the classifier model.
+    """
     global classifier
     if classifier is None:
         classifier = TreeOfLifeClassifier()
 
 
-def bboxesToPIL(img, boxes):
+def bboxes_to_pil(img, boxes):
     """
     Extracts bounding boxes as PIL images from the base image.
     Inputs:
@@ -29,7 +31,7 @@ def bboxesToPIL(img, boxes):
     return pil_boxes
 
 
-def classifyBoxes(pil_boxes):
+def predict_boxes_classes(pil_boxes):
     """
     BioClip2 classification for each bounding box
     Inputs:
@@ -57,5 +59,8 @@ def classifyBoxes(pil_boxes):
 
 
 def classify_boxes(img, boxes):
-    pil_boxes = bboxesToPIL(img, boxes)
-    return classifyBoxes(pil_boxes)
+    """
+    Quality of life function
+    """
+    pil_boxes = bboxes_to_pil(img, boxes)
+    return predict_boxes_classes(pil_boxes)

@@ -1,7 +1,3 @@
-from fastapi import FastAPI, File, UploadFile, BackgroundTasks
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 import time
 import json
 import zipfile
@@ -12,6 +8,10 @@ import tempfile
 from PIL import Image
 from io import BytesIO
 from torch import cuda
+from fastapi import FastAPI, File, UploadFile, BackgroundTasks
+from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from FlatbugDetection import load_model, load_model_cpu, predict, predict_cpu
 from BioclipClassification import load_classifier, classify_boxes
@@ -130,7 +130,7 @@ async def upload_zip(background_tasks: BackgroundTasks, file: UploadFile = File(
                     "objects": objects
                 })
 
-        if results == []:
+        if not results:
             return {"status": "novalidinput"}
 
     return {"status": "done", "pred_output": results}
