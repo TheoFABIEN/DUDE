@@ -23,3 +23,7 @@ The models can take several minutes to download. For faster download of the mode
 Then, add your token into the .env file.
 
 After initial configuration, the app can be accessed locally here: [http://localhost:3000/](http://localhost:3000/)
+
+<h3>Using</h3>
+
+To use the app with your own photos, upload a .zip file containing all your images in PNG or JPEG format. You can also test the app with the provided test files (./Test_files).
