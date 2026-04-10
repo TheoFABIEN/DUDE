@@ -1,10 +1,13 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, BackgroundTasks
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+import time
 import json
 import zipfile
 import os
+import shutil
+import uuid
 import tempfile
 from PIL import Image
 import base64
@@ -15,7 +18,10 @@ from FlatbugDetection import load_model, load_model_cpu, predict, predict_cpu
 from BioclipClassification import load_classifier, classify_boxes
 
 
+DEVICE = "cuda:0"
+READY = False
 OUTPUT_DIR = "/tmp/jobs"
+MAX_AGE_SECONDS = 18000     # life time for stored files
 os.makedirs(OUTPUT_DIR, exist_ok = True)
 
 app = FastAPI(title="DetectoClassif Backend - Flatbug Only")
@@ -29,31 +35,57 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory=OUTPUT_DIR), name="static")
 
-DEVICE = "cuda:0"
+
+def cleanup_old_jobs():
+    """
+    Deletes files older than MAX_AGE_SECONDS
+    """
+    now = time.time()
+    if not os.path.exists(OUTPUT_DIR):
+        return
+
+    for item in os.listdir(OUTPUT_DIR):
+        item_path = os.path.join(OUTPUT_DIR, item)
+        if os.stat(item_path).st_mtime < now - MAX_AGE_SECONDS:
+            try:
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+                else:
+                    os.remove(item_path)
+                print(f"GC: Cleaning of {item_path} done.")
+            except Exception as e:
+                print(f"GC: Error while cleaning {item_path}: {e}")
+
 
 @app.on_event("startup")
 async def startup():
+    global READY
     print("Loading models...")
     load_model(DEVICE)
-    print("Model 1/3 loaded")
     load_model_cpu()
-    print("Model 2/3 loaded")
     load_classifier()
-    print("Model 3/3 loaded")
+    READY = True
     print("READY")
 
 
-def crop_to_base64(img, box):
-    x1, y1, x2, y2 = box
-    crop = img.crop((x1, y1, x2, y2))
-    buffered = BytesIO()
-    crop.save(buffered, format="JPEG")
-    return base64.b64encode(buffered.getvalue()).decode()
+@app.get("/health")
+def health():
+    if READY:
+        return {"status": "ready"}
+    return JSONResponse(status_code=503, content={"status": {"loading"}})
+
 
 @app.post("/upload")
-async def upload_zip(file: UploadFile = File(...)):
+async def upload_zip(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+
+    background_tasks.add_task(cleanup_old_jobs)
+
     if not file.filename.endswith(".zip"):
         return JSONResponse(status_code=400, content={"error": "Only zip file format is accepted"})
+
+    job_id = str(uuid.uuid4())
+    job_path = os.path.join(OUTPUT_DIR, job_id)
+    os.makedirs(job_path, exist_ok=True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         zip_path = os.path.join(tmpdir, "upload.zip")
@@ -64,14 +96,13 @@ async def upload_zip(file: UploadFile = File(...)):
             zip_ref.extractall(tmpdir)
 
         results = []
-        job_id = tempfile.gettempprefix()
         for i, fname in enumerate(os.listdir(tmpdir)):
             fpath = os.path.join(tmpdir, fname)
             if fname.lower().endswith((".png", ".jpg", ".jpeg")):
                 img = Image.open(fpath).convert("RGB")
                 img_filename = f"img_{i}.jpg"
-                img_path = os.path.join(OUTPUT_DIR, img_filename)
-                img.save(img_path, "JPEG")
+                img_save_path = os.path.join(job_path, img_filename)
+                img.save(img_save_path, "JPEG")
                 cuda.empty_cache()
                 try:
                     pred = predict(img)
@@ -84,18 +115,19 @@ async def upload_zip(file: UploadFile = File(...)):
                 objects = []
                 for j, (box, cls) in enumerate(zip(boxes, classes)):
                     crop_filename = f"crop_{i}_{j}.jpg"
+                    crop_save_path = os.path.join(job_path, crop_filename)
                     x1, y1, x2, y2 = box
-                    img.crop((x1, y1, x2, y2)).save(os.path.join(OUTPUT_DIR, crop_filename), "JPEG")
+                    img.crop((x1, y1, x2, y2)).save(crop_save_path, "JPEG")
                     objects.append({
                         "bbox": box,
-                        "crop_url": f"/api/static/{crop_filename}",
+                        "crop_url": f"/api/static/{job_id}/{crop_filename}",
                         "pred": cls["pred"],
                         "top_k": cls["top_k"]
                     })
                     print("BOX: ", box)
                     print("CLASS: ", cls)
                 results.append({
-                    "image_url": f"/api/static/{img_filename}",
+                    "image_url": f"/api/static/{job_id}/{img_filename}",
                     "objects": objects
                 })
 
