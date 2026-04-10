@@ -7,7 +7,7 @@
 
 <br> <br>
 
-This app leverages Flatbug and BioClip2 te detect and identify insect species.
+This app leverages Flatbug and BioClip2 to detect and identify insect species.
 
 
 ## Quick start
