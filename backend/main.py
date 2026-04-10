@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import json
 import zipfile
 import os
@@ -13,6 +14,10 @@ from torch import cuda, serialization
 from FlatbugDetection import load_model, load_model_cpu, predict, predict_cpu
 from BioclipClassification import load_classifier, classify_boxes
 
+
+OUTPUT_DIR = "/tmp/jobs"
+os.makedirs(OUTPUT_DIR, exist_ok = True)
+
 app = FastAPI(title="DetectoClassif Backend - Flatbug Only")
 app.add_middleware(
     CORSMiddleware,
@@ -21,6 +26,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+app.mount("/static", StaticFiles(directory=OUTPUT_DIR), name="static")
 
 DEVICE = "cuda:0"
 
@@ -57,13 +64,14 @@ async def upload_zip(file: UploadFile = File(...)):
             zip_ref.extractall(tmpdir)
 
         results = []
-        for fname in os.listdir(tmpdir):
+        job_id = tempfile.gettempprefix()
+        for i, fname in enumerate(os.listdir(tmpdir)):
             fpath = os.path.join(tmpdir, fname)
             if fname.lower().endswith((".png", ".jpg", ".jpeg")):
                 img = Image.open(fpath).convert("RGB")
-                buffered = BytesIO()
-                img.save(buffered, format="JPEG")
-                img_base64 = base64.b64encode(buffered.getvalue()).decode()
+                img_filename = f"img_{i}.jpg"
+                img_path = os.path.join(OUTPUT_DIR, img_filename)
+                img.save(img_path, "JPEG")
                 cuda.empty_cache()
                 try:
                     pred = predict(img)
@@ -72,19 +80,22 @@ async def upload_zip(file: UploadFile = File(...)):
                     pred = predict_cpu(img)
                 boxes = pred["boxes"]
                 classes = classify_boxes(img, boxes)
+
                 objects = []
-                for box, cls in zip(boxes, classes):
-                    crop_b64 = crop_to_base64(img, box)
+                for j, (box, cls) in enumerate(zip(boxes, classes)):
+                    crop_filename = f"crop_{i}_{j}.jpg"
+                    x1, y1, x2, y2 = box
+                    img.crop((x1, y1, x2, y2)).save(os.path.join(OUTPUT_DIR, crop_filename), "JPEG")
                     objects.append({
                         "bbox": box,
-                        "crop": crop_b64,
+                        "crop_url": f"/api/static/{crop_filename}",
                         "pred": cls["pred"],
                         "top_k": cls["top_k"]
                     })
                     print("BOX: ", box)
                     print("CLASS: ", cls)
                 results.append({
-                    "image": img_base64,
+                    "image_url": f"/api/static/{img_filename}",
                     "objects": objects
                 })
 

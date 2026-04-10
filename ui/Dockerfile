@@ -10,7 +10,9 @@ RUN rm -rf /usr/local/apache2/htdocs/*
 COPY --from=build-stage /app/dist /usr/local/apache2/htdocs/
 RUN sed -i 's/#LoadModule proxy_module/LoadModule proxy_module/' /usr/local/apache2/conf/httpd.conf
 RUN sed -i 's/#LoadModule proxy_http_module/LoadModule proxy_http_module/' /usr/local/apache2/conf/httpd.conf
-RUN echo "ProxyPass /api http://api:8000" >> /usr/local/apache2/conf/httpd.conf
+
+RUN echo "ProxyTimeout 600" >> /usr/local/apache2/conf/httpd.conf
+RUN echo "ProxyPass /api http://api:8000 connectiontimeout=600 timeout=600" >> /usr/local/apache2/conf/httpd.conf
 RUN echo "ProxyPassReverse /api http://api:8000" >> /usr/local/apache2/conf/httpd.conf
 
 EXPOSE 80

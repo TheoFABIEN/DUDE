@@ -4,46 +4,38 @@ defineProps({
 })
 </script>
 
+
 <template>
   <div class="image-viewer">
-
     <transition name="slide" mode="out-in">
-      <div :key="image.image">
-
-        <img
-          :src="'data:image/jpeg;base64,' + image.image"
+      <div :key="image.image_url"> <img
+          :src="image.image_url" 
           class="main-image"
+          loading="lazy" 
         />
 
         <div class="objects">
-          <div
-            v-for="(obj, i) in image.objects"
-            :key="i"
-            class="object-row"
-          >
+          <div v-for="(obj, i) in image.objects" :key="i" class="object-row">
             <img
-              :src="'data:image/jpeg;base64,' + obj.crop"
+              :src="obj.crop_url"
               class="crop"
+              loading="lazy"
             />
-
             <div class="info">
               <strong>{{ obj.pred }}</strong>
-
               <div class="topk">
-                <div v-for="(t, k) in obj.top_k" :key="k">
-                  {{ t[0] }} — {{ t[1].toFixed(3) }}
+                <div v-for="(t,k) in obj.top_k" :key="k">
+                  {{ t[0] }} - {{ t[1].toFixed(3) }}
                 </div>
               </div>
-
             </div>
           </div>
         </div>
-
       </div>
     </transition>
-
   </div>
 </template>
+
 
 <style>
 .image-viewer {
