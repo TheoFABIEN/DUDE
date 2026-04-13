@@ -14,9 +14,11 @@ body {
     font-size: 14px;
 }
 
-label {
-    background-color: var(--ui-grey);
-}
-label:hover {
+button, label {
+  color: var(--ui-pearl);
+  background-color: var(--ui-grey);
+  border: none;
+  &:hover {
     background-color: var(--ui-amber);
+  }
 }

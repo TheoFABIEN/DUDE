@@ -59,9 +59,11 @@ def cleanup_old_jobs():
             except OSError as e:
                 print(f"GC: Error while cleaning {item_path}: {e}")
 
+
 def process_single_image(fpath, fname, i, job_path, job_id):
     """ Helper to process an individual image """
     img = Image.open(fpath).convert("RGB")
+    img_w, img_h = img.size
     img_filename = f"img_{i}.jpg"
     img.save(os.path.join(job_path, img_filename), "JPEG")
 
@@ -88,6 +90,8 @@ def process_single_image(fpath, fname, i, job_path, job_id):
     
     return {
         "image_name": fname,
+        "image_width": img_w,
+        "image_height": img_h,
         "image_url": f"/api/static/{job_id}/{img_filename}",
         "objects": objects
     }
@@ -110,7 +114,7 @@ def health():
     """ Checks if the models are loaded and the service is ready."""
     if READY:
         return {"status": "ready"}
-    return JSONResponse(status_code=503, content={"status": {"loading"}})
+    return JSONResponse(status_code=503, content={"status": "loading"})
 
 
 @app.post("/upload")
@@ -151,6 +155,16 @@ async def download_results(data: dict):
     """
     Returns the results as a .zip file containing JSON text files.
     """
+    format_type = data.get("format", "default")
+    if format_type == "coco":
+        return generate_coco(data)
+    return generate_default(data)
+
+
+def generate_default(data: dict):
+    """
+    Generates inference results using the default file format.
+    """
     buffer = BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         for i, img in enumerate(data["pred_output"]):
@@ -175,3 +189,57 @@ async def download_results(data: dict):
         media_type="application/zip",
         headers={"Content-Disposition": "attachment; filename=results.zip"}
     )
+
+def generate_coco(data: dict):
+    """
+    Generates inference results using the coco file format.
+    """
+    buffer = BytesIO()
+    images = []
+    annotations = []
+    categories = {}
+    ann_id = 1
+    cat_id = 1
+
+    for i, img in enumerate(data["pred_output"], start=1):
+        image_name = img.get("image_name", f"img_{i}.jpg")
+        images.append({
+            "id": i,
+            "file_name": image_name,
+            "height": img["image_height"],
+            "width": img["image_width"]
+        })
+        for obj in img["objects"]:
+            label = obj["pred"]
+            if label not in categories:
+                categories[label] = cat_id
+                cat_id += 1
+
+            x1, y1, x2, y2 = obj["bbox"]
+            width = x2 - x1
+            height = y2 - y1
+            annotations.append({
+                "id": ann_id,
+                "image_id": i,
+                "category_id": categories[label],
+                "bbox": [x1, y1, width, height],
+                "area": width * height,
+                "iscrowd": 0
+            })
+            ann_id += 1
+
+    coco = {
+        "images": images,
+        "annotations": annotations,
+        "categories": [
+            {"id": v, "name": k}
+            for k, v in categories.items()
+        ]
+    }
+
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("annotations.json", json.dumps(coco, indent=2))
+    
+    buffer.seek(0)
+    return StreamingResponse(buffer, media_type="application/zip")
+

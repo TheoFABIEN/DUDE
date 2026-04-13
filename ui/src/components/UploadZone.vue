@@ -56,18 +56,18 @@ function onFileChange(event) {
   row-gap: 16px;
   transition: 0.3s ease all;
   backdrop-filter: blur(10px);
+  label {
+    padding: 8px 12px;
+    transition: 0.3s ease all;
+    cursor: pointer;
+  }
+  input {
+    display: none;
+  }
 }
 .active-dropzone {
   color: #fff;
   border-color: #fff;
   background-color: var(--ui-amber);
-}
-.upload-zone label {
-  padding: 8px 12px;
-  transition: 0.3s ease all;
-  cursor: pointer;
-}
-.upload-zone input {
-  display: none;
 }
 </style>
