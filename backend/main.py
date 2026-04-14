@@ -75,8 +75,8 @@ def health():
 
 @app.post("/upload")
 async def upload_zip(
-    background_tasks: BackgroundTasks, 
-    file: UploadFile = File(...), 
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
     output_dir="/tmp/jobs"
 ):
     """Extracts zip, runs inference, and returns detection results."""
@@ -102,10 +102,10 @@ async def upload_zip(
             fpath = os.path.join(tmpdir, fname)
             if fname.lower().endswith((".png", ".jpg", ".jpeg")):
                 img_results = process_single_image(
-                    fpath, 
-                    fname, 
-                    i, 
-                    job_path, 
+                    fpath,
+                    fname,
+                    i,
+                    job_path,
                     job_id,
                     app.state
                 )

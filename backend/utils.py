@@ -34,7 +34,7 @@ def process_single_image(fpath, fname, i, job_path, job_id, state):
     objects = []
     for j, (box, cls) in enumerate(
         zip(
-            boxes, 
+            boxes,
             classify_boxes(img, boxes, state.classifier)
         )
     ):
@@ -62,7 +62,7 @@ def generate_default(data: dict):
     """
     buffer = BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        for i, img in enumerate(data["pred_output"]):
+        for img in data["pred_output"]:
             image_name = img.get("image_name", "unknown.jpg")
             base_name = os.path.splitext(os.path.basename(image_name))[0]
             json_filename = f"{base_name}.json"
@@ -85,6 +85,22 @@ def generate_default(data: dict):
         headers={"Content-Disposition": "attachment; filename=results.zip"}
     )
 
+
+def create_coco_box_annotation(ann_id, img_id, obj, cat_id):
+    """
+    Calculates bbox dimensions and returns a COCO annotation dict.
+    Used inside generate_coco().
+    """
+    x1, y1, x2, y2 = obj["bbox"]
+    width, height = x2 - x1, y2 - y1
+    return {
+        "id": ann_id,
+        "image_id": img_id,
+        "category_id": cat_id,
+        "bbox": [x1, y1, width, height],
+        "area": width * height,
+        "iscrowd": 0
+    }
 
 def generate_coco(data: dict):
     """
@@ -110,20 +126,15 @@ def generate_coco(data: dict):
                 categories[label] = cat_id
                 cat_id += 1
 
-            x1, y1, x2, y2 = obj["bbox"]
-            width = x2 - x1
-            height = y2 - y1
-            annotations.append({
-                "id": ann_id,
-                "image_id": i,
-                "category_id": categories[label],
-                "bbox": [x1, y1, width, height],
-                "area": width * height,
-                "iscrowd": 0
-            })
+            annotations.append({create_coco_box_annotation(
+                ann_id,
+                i,
+                obj,
+                categories[label]
+            )})
             ann_id += 1
 
-    coco = {
+    coco_content = {
         "images": images,
         "annotations": annotations,
         "categories": [
@@ -133,7 +144,7 @@ def generate_coco(data: dict):
     }
 
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("annotations.json", json.dumps(coco, indent=2))
+        zf.writestr("annotations.json", json.dumps(coco_content, indent=2))
 
     buffer.seek(0)
     return StreamingResponse(buffer, media_type="application/zip")
