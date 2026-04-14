@@ -10,6 +10,7 @@ import os
 import shutil
 import uuid
 import tempfile
+from torch import cuda
 from fastapi import FastAPI, File, UploadFile, BackgroundTasks
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -59,7 +60,7 @@ async def startup():
     print("Loading models...")
     app.state.detector = load_model("cuda:0")
     app.state.detector_cpu = load_model_cpu()
-    app.state.classifier = load_classifier()
+    app.state.classifier = load_classifier(device="cuda" if cuda.is_available else "cpu")
 
     app.state.ready = True
     print("READY")

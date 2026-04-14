@@ -30,6 +30,7 @@ def process_single_image(fpath, fname, i, job_path, job_id, state):
         pred = predict_cpu(img, state.detector_cpu)
 
     #####   CLASSIFICATION   #####
+    cuda.empty_cache()
     boxes = pred["boxes"]
     objects = []
     for j, (box, cls) in enumerate(

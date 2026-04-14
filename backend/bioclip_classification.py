@@ -5,11 +5,11 @@ Functions to handle bounding boxes classification using Bioclip2.
 from bioclip import TreeOfLifeClassifier, Rank
 
 
-def load_classifier():
+def load_classifier(device):
     """
     Loads the classifier model.
     """
-    return TreeOfLifeClassifier()
+    return TreeOfLifeClassifier(device=device)
 
 
 def bboxes_to_pil(img, boxes):

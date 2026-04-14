@@ -14,7 +14,7 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel && \
 RUN git clone https://github.com/darsa-group/flat-bug.git /flat-bug && \
     python3 -m pip install --no-cache-dir -e /flat-bug
 
-RUN python3 -m pip install pybioclip
+RUN python3 -m pip install pybioclip==2.1.3
 
 COPY . .
 
