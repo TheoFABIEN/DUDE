@@ -126,12 +126,12 @@ def generate_coco(data: dict):
                 categories[label] = cat_id
                 cat_id += 1
 
-            annotations.append({create_coco_box_annotation(
+            annotations.append(create_coco_box_annotation(
                 ann_id,
                 i,
                 obj,
                 categories[label]
-            )})
+            ))
             ann_id += 1
 
     coco_content = {
