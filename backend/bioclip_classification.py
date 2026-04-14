@@ -4,16 +4,12 @@ Functions to handle bounding boxes classification using Bioclip2.
 
 from bioclip import TreeOfLifeClassifier, Rank
 
-TOP_K = 5
-classifier = None
 
 def load_classifier():
     """
     Loads the classifier model.
     """
-    global classifier
-    if classifier is None:
-        classifier = TreeOfLifeClassifier()
+    return TreeOfLifeClassifier()
 
 
 def bboxes_to_pil(img, boxes):
@@ -35,7 +31,7 @@ def bboxes_to_pil(img, boxes):
     return pil_boxes
 
 
-def predict_boxes_classes(pil_boxes):
+def predict_boxes_classes(pil_boxes, classifier, top_k = 5):
     """
     BioClip2 classification for each bounding box
     Inputs:
@@ -49,7 +45,7 @@ def predict_boxes_classes(pil_boxes):
         rank = Rank.SPECIES
     )
     for i in range(len(pil_boxes)):
-        preds = all_predictions[i * TOP_K : (i + 1) * TOP_K]
+        preds = all_predictions[i * top_k : (i + 1) * top_k]
         topk = [
             (p["species"], float(p["score"]))
             for p in preds
@@ -62,9 +58,9 @@ def predict_boxes_classes(pil_boxes):
     return output
 
 
-def classify_boxes(img, boxes):
+def classify_boxes(img, boxes, classifier):
     """
     Quality of life function
     """
     pil_boxes = bboxes_to_pil(img, boxes)
-    return predict_boxes_classes(pil_boxes)
+    return predict_boxes_classes(pil_boxes, classifier)

@@ -5,29 +5,22 @@ ZIP uploads.
 """
 
 import time
-import json
 import zipfile
 import os
 import shutil
 import uuid
 import tempfile
-from io import BytesIO
-from PIL import Image
-from torch import cuda
 from fastapi import FastAPI, File, UploadFile, BackgroundTasks
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from flatbug_detection import load_model, load_model_cpu, predict, predict_cpu
-from bioclip_classification import load_classifier, classify_boxes
+from flatbug_detection import load_model, load_model_cpu
+from bioclip_classification import load_classifier
+from utils import process_single_image, generate_coco, generate_default
 
 
-DEVICE = "cuda:0"
-READY = False
-OUTPUT_DIR = "/tmp/jobs"
-MAX_AGE_SECONDS = 18000     # life time for stored files
-os.makedirs(OUTPUT_DIR, exist_ok = True)
+os.makedirs("/tmp/jobs", exist_ok = True)
 
 app = FastAPI(title="DetectoClassif Backend - Flatbug Only")
 app.add_middleware(
@@ -38,18 +31,18 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-app.mount("/static", StaticFiles(directory=OUTPUT_DIR), name="static")
+app.mount("/static", StaticFiles(directory="/tmp/jobs"), name="static")
 
 
-def cleanup_old_jobs():
-    """ Deletes files older than MAX_AGE_SECONDS """
+def cleanup_old_jobs(max_age_seconds = 18000, output_dir="/tmp/jobs"):
+    """ Deletes files older than max_age_seconds """
     now = time.time()
-    if not os.path.exists(OUTPUT_DIR):
+    if not os.path.exists(output_dir):
         return
 
-    for item in os.listdir(OUTPUT_DIR):
-        item_path = os.path.join(OUTPUT_DIR, item)
-        if os.stat(item_path).st_mtime < now - MAX_AGE_SECONDS:
+    for item in os.listdir(output_dir):
+        item_path = os.path.join(output_dir, item)
+        if os.stat(item_path).st_mtime < now - max_age_seconds:
             try:
                 if os.path.isdir(item_path):
                     shutil.rmtree(item_path)
@@ -60,65 +53,32 @@ def cleanup_old_jobs():
                 print(f"GC: Error while cleaning {item_path}: {e}")
 
 
-def process_single_image(fpath, fname, i, job_path, job_id):
-    """ Helper to process an individual image """
-    img = Image.open(fpath).convert("RGB")
-    img_w, img_h = img.size
-    img_filename = f"img_{i}.jpg"
-    img.save(os.path.join(job_path, img_filename), "JPEG")
-
-    cuda.empty_cache()
-    try:
-        pred = predict(img)
-    except cuda.OutOfMemoryError:
-        cuda.empty_cache()
-        pred = predict_cpu(img)
-
-    boxes = pred["boxes"]
-    classes = classify_boxes(img, boxes)
-    objects = []
-    for j, (box, cls) in enumerate(zip(boxes, classes)):
-        crop_name = f"crop_{i}_{j}.jpg"
-        x_1, y_1, x_2, y_2 = box
-        img.crop((x_1, y_1, x_2, y_2)).save(os.path.join(job_path, crop_name), "JPEG")
-        objects.append({
-            "bbox": box,
-            "crop_url": f"/api/static/{job_id}/{crop_name}",
-            "pred": cls["pred"],
-            "top_k": cls["top_k"]
-        })
-    
-    return {
-        "image_name": fname,
-        "image_width": img_w,
-        "image_height": img_h,
-        "image_url": f"/api/static/{job_id}/{img_filename}",
-        "objects": objects
-    }
-
-
 @app.on_event("startup")
 async def startup():
     """ Initializes models and sets application state to ready. """
-    global READY
     print("Loading models...")
-    load_model(DEVICE)
-    load_model_cpu()
-    load_classifier()
-    READY = True
+    app.state.detector = load_model("cuda:0")
+    app.state.detector_cpu = load_model_cpu()
+    app.state.classifier = load_classifier()
+
+    app.state.ready = True
     print("READY")
 
 
 @app.get("/health")
 def health():
     """ Checks if the models are loaded and the service is ready."""
-    if READY:
+    if getattr(app.state, "ready", False):
         return {"status": "ready"}
     return JSONResponse(status_code=503, content={"status": "loading"})
 
 
 @app.post("/upload")
-async def upload_zip(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+async def upload_zip(
+    background_tasks: BackgroundTasks, 
+    file: UploadFile = File(...), 
+    output_dir="/tmp/jobs"
+):
     """Extracts zip, runs inference, and returns detection results."""
     background_tasks.add_task(cleanup_old_jobs)
 
@@ -126,7 +86,7 @@ async def upload_zip(background_tasks: BackgroundTasks, file: UploadFile = File(
         return JSONResponse(status_code=400, content={"error": "Only zip file format is accepted"})
 
     job_id = str(uuid.uuid4())
-    job_path = os.path.join(OUTPUT_DIR, job_id)
+    job_path = os.path.join(output_dir, job_id)
     os.makedirs(job_path, exist_ok=True)
 
     results = []
@@ -141,7 +101,14 @@ async def upload_zip(background_tasks: BackgroundTasks, file: UploadFile = File(
         for i, fname in enumerate(os.listdir(tmpdir)):
             fpath = os.path.join(tmpdir, fname)
             if fname.lower().endswith((".png", ".jpg", ".jpeg")):
-                img_results = process_single_image(fpath, fname, i, job_path, job_id)
+                img_results = process_single_image(
+                    fpath, 
+                    fname, 
+                    i, 
+                    job_path, 
+                    job_id,
+                    app.state
+                )
                 results.append(img_results)
 
     if not results:
@@ -159,87 +126,3 @@ async def download_results(data: dict):
     if format_type == "coco":
         return generate_coco(data)
     return generate_default(data)
-
-
-def generate_default(data: dict):
-    """
-    Generates inference results using the default file format.
-    """
-    buffer = BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        for i, img in enumerate(data["pred_output"]):
-            image_name = img.get("image_name", "unknown.jpg")
-            base_name = os.path.splitext(os.path.basename(image_name))[0]
-            json_filename = f"{base_name}.json"
-            json_data = {
-                "image_name": image_name,
-                "objects": []
-            }
-            for obj in img["objects"]:
-                json_data["objects"].append({
-                    "bbox": obj.get("bbox", None),
-                    "pred": obj["pred"],
-                    "confidence": obj["top_k"][0][1] if obj["top_k"] else None,
-                    "top_k": obj["top_k"]
-                })
-            zf.writestr(json_filename, json.dumps(json_data, indent=2))
-    buffer.seek(0)
-    return StreamingResponse(
-        buffer,
-        media_type="application/zip",
-        headers={"Content-Disposition": "attachment; filename=results.zip"}
-    )
-
-def generate_coco(data: dict):
-    """
-    Generates inference results using the coco file format.
-    """
-    buffer = BytesIO()
-    images = []
-    annotations = []
-    categories = {}
-    ann_id = 1
-    cat_id = 1
-
-    for i, img in enumerate(data["pred_output"], start=1):
-        image_name = img.get("image_name", f"img_{i}.jpg")
-        images.append({
-            "id": i,
-            "file_name": image_name,
-            "height": img["image_height"],
-            "width": img["image_width"]
-        })
-        for obj in img["objects"]:
-            label = obj["pred"]
-            if label not in categories:
-                categories[label] = cat_id
-                cat_id += 1
-
-            x1, y1, x2, y2 = obj["bbox"]
-            width = x2 - x1
-            height = y2 - y1
-            annotations.append({
-                "id": ann_id,
-                "image_id": i,
-                "category_id": categories[label],
-                "bbox": [x1, y1, width, height],
-                "area": width * height,
-                "iscrowd": 0
-            })
-            ann_id += 1
-
-    coco = {
-        "images": images,
-        "annotations": annotations,
-        "categories": [
-            {"id": v, "name": k}
-            for k, v in categories.items()
-        ]
-    }
-
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("annotations.json", json.dumps(coco, indent=2))
-    
-    buffer.seek(0)
-    return StreamingResponse(buffer, media_type="application/zip")
-
