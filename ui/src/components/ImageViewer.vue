@@ -75,4 +75,12 @@ defineProps({
   font-size: 12px;
   color: var(--ui-grey);
 }
+
+@media (max-width: 800px) {
+  .main-image {
+    max-width: 95%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
 </style>
