@@ -1,7 +1,12 @@
 <script setup>
-defineProps({
-  image: Object
+const props = defineProps({
+  image: Object,
+  imgIndex: Number
 })
+
+const emit = defineEmits([
+  'request-delete'
+])
 
 function selectClass(obj, index) {
   if (!obj.original_top_k) {
@@ -56,7 +61,14 @@ function resetClass(obj) {
                 </div>
               </div>
             </div>
-            <button v-if="obj.edited" @click="resetClass(obj)">Reset</button>
+            <div class="actions">
+              <button class="delete-btn" @click="emit('request-delete', props.imgIndex, i)">
+                Delete
+              </button>
+              <button class="reset-btn" v-if="obj.edited" @click="resetClass(obj)">
+                Reset
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -83,13 +95,36 @@ function resetClass(obj) {
 }
 .object-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 10px;
 }
 .left {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.actions {
+  display: flex;
+  flex-direction: column;
+  margin-left: auto;
+  align-items: flex-end;
+  gap: 6px;
+  button {
+    background: none;
+  }
+}
+
+.delete-btn{
+  color: #af3638;
+  &:hover {
+  color: #e93639;
+  }
+}
+.reset-btn {
+  color: var(--ui-grey);
+  &:hover {
+    color: var(--ui-amber);
+  }
 }
 
 .slide-enter-active,
@@ -117,14 +152,6 @@ function resetClass(obj) {
     font-weight: bold;
   }
 }
-button {
-  background: none;
-  margin-left: auto;
-  &:hover {
-    background: none;
-    color: var(--ui-amber);
-  }
-}
 
 @media (max-width: 600px) {
   .main-image {
@@ -136,10 +163,24 @@ button {
     flex-direction: column;
     align-items: flex-start;
   }
-  button {
-    margin-left: 0;
-    margin-top: 10px;
-    align-self: flex-end;
+  .actions {
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    min-height: auto;
+    width: 100%;
+    button {
+      margin-left: 0;
+      margin-top: 10px;
+      align-self: flex-end;
+    }
+  }
+  .reset-btn {
+    order: 1;
+  }
+  .delete-btn {
+    order: 2;
+    margin-left: auto;
   }
 }
 </style>

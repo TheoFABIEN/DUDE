@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import ImageViewer from './ImageViewer.vue'
+import DeleteModal from './deleteModal.vue'
 
 const props = defineProps({
   results: Object
@@ -21,6 +22,24 @@ function next() {
   if (currentIndex.value < props.results.pred_output.length - 1) {
     currentIndex.value++
   }
+}
+
+const showDeleteModal = ref(false)
+const deleteTarget = ref(null)
+
+function requestDelete(imgIndex, objIndex) {
+  deleteTarget.value = { imgIndex, objIndex }
+  showDeleteModal.value = true
+}
+function cancelDelete() {
+  showDeleteModal.value = false
+  deleteTarget.value = null
+}
+function confirmDelete() {
+  const { imgIndex, objIndex } = deleteTarget.value
+  props.results.pred_output[imgIndex].objects.splice(objIndex, 1)
+  showDeleteModal.value = false
+  deleteTarget.value = null
 }
 </script>
 
@@ -45,8 +64,18 @@ function next() {
     </div>
 
     <div v-else-if="results.status === 'done'">
-      <ImageViewer :image="results.pred_output[currentIndex]" />
+      <ImageViewer 
+        :image="results.pred_output[currentIndex]" 
+        :img-index="currentIndex"
+        @request-delete="requestDelete"
+      />
     </div>
+
+    <DeleteModal 
+      v-if="showDeleteModal"
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
+    />
 
     <div v-else-if="results.status === 'novalidinput'">
       No valid images found.

@@ -1,3 +1,37 @@
+<script setup>
+import { downloadResults } from '@/services/api'
+import { ref } from 'vue'
+
+const dlFormat = ref("default")
+
+const props = defineProps({
+  results: Object
+})
+
+const emits = defineEmits([
+    "close"
+])
+
+function close() {
+    emits("close")
+}
+
+async function download() {
+  const blob = await downloadResults(props.results, dlFormat.value)
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = dlFormat.value === "coco"
+    ? "coco_annotations.zip"
+    : "results.zip"
+  a.click()
+  window.URL.revokeObjectURL(url)
+  close()
+}
+
+</script>
+
+
 <template>
     <div class="overlay" @click.self="close">
         <div class="modal">
@@ -13,38 +47,6 @@
         </div>
     </div>
 </template>
-
-
-<script setup>
-import { downloadResults } from '@/services/api'
-import { ref } from 'vue'
-
-const dlFormat = ref("default")
-
-const props = defineProps({
-  results: Object
-})
-
-const emits = defineEmits([
-    "close"
-])
-
-async function download() {
-  const blob = await downloadResults(props.results, dlFormat.value)
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = dlFormat.value === "coco"
-    ? "coco_annotations.zip"
-    : "results.zip"
-  a.click()
-  window.URL.revokeObjectURL(url)
-}
-
-function close() {
-    emits("close")
-}
-</script>
 
 
 <style scoped>
