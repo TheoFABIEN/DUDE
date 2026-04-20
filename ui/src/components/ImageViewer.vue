@@ -2,6 +2,27 @@
 defineProps({
   image: Object
 })
+
+function selectClass(obj, index) {
+  if (!obj.original_top_k) {
+    obj.original_top_k = [...obj.top_k]
+  }
+  if (index === 0) return
+  const selected = obj.top_k[index]
+  const newTopK = obj.top_k.filter((_, i) => i !== index)
+  obj.top_k = [selected, ...newTopK]
+  obj.pred = selected[0]
+  obj.edited = true
+}
+
+function resetClass(obj) {
+  if (obj.original_top_k) {
+    obj.top_k = [...obj.original_top_k]
+    obj.pred = obj.top_k[0][0]
+    obj.edited = false
+  }
+}
+
 </script>
 
 
@@ -16,19 +37,26 @@ defineProps({
 
         <div class="objects">
           <div v-for="(obj, i) in image.objects" :key="i" class="object-row">
-            <img
-              :src="obj.crop_url"
-              class="crop"
-              loading="lazy"
-            />
-            <div class="info">
-              <strong>{{ obj.pred }}</strong>
-              <div class="topk">
-                <div v-for="(t,k) in obj.top_k" :key="k">
-                  {{ t[0] }} - {{ t[1].toFixed(3) }}
+            <div class="left">
+              <img
+                :src="obj.crop_url"
+                class="crop"
+                loading="lazy"
+              />
+              <div class="info">
+                <strong>{{ obj.pred }}</strong>
+                <div class="topk">
+                  <div v-for="(t,k) in obj.top_k" 
+                    :key="k"
+                    class="topk-item"
+                    @click="selectClass(obj, k)"
+                  >
+                    {{ t[0] }} - {{ t[1].toFixed(3) }}
+                  </div>
                 </div>
               </div>
             </div>
+            <button v-if="obj.edited" @click="resetClass(obj)">Reset</button>
           </div>
         </div>
       </div>
@@ -37,7 +65,7 @@ defineProps({
 </template>
 
 
-<style>
+<style scoped>
 .image-viewer {
   color: var(--ui-amber);
 }
@@ -58,6 +86,11 @@ defineProps({
   align-items: center;
   margin-bottom: 10px;
 }
+.left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
 .slide-enter-active,
 .slide-leave-active {
@@ -75,12 +108,38 @@ defineProps({
   font-size: 12px;
   color: var(--ui-grey);
 }
+.topk-item {
+  cursor: pointer;
+  &:hover {
+    color: var(--ui-amber);
+  }
+  &:first-child {
+    font-weight: bold;
+  }
+}
+button {
+  background: none;
+  margin-left: auto;
+  &:hover {
+    background: none;
+    color: var(--ui-amber);
+  }
+}
 
-@media (max-width: 800px) {
+@media (max-width: 600px) {
   .main-image {
     max-width: 95%;
     margin-left: auto;
     margin-right: auto;
+  }
+  .object-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  button {
+    margin-left: 0;
+    margin-top: 10px;
+    align-self: flex-end;
   }
 }
 </style>
