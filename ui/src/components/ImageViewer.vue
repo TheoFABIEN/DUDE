@@ -1,7 +1,8 @@
 <script setup>
 const props = defineProps({
   image: Object,
-  imgIndex: Number
+  imgIndex: Number,
+  direction: String
 })
 
 const emit = defineEmits([
@@ -33,7 +34,7 @@ function resetClass(obj) {
 
 <template>
   <div class="image-viewer">
-    <transition name="slide" mode="out-in">
+    <transition :name="direction === 'next' ? 'slide-left' : 'slide-right'" mode="out-in">
       <div :key="image.image_url"> <img
           :src="image.image_url" 
           class="main-image"
@@ -78,6 +79,32 @@ function resetClass(obj) {
 
 
 <style scoped>
+
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-left-enter-from {
+  transform: translateX(50px);
+  opacity: 0;
+}
+.slide-left-leave-to {
+  transform: translateX(-50px);
+  opacity: 0;
+}
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-right-enter-from {
+  transform: translateX(-50px);
+  opacity: 0;
+}
+.slide-right-leave-to {
+  transform: translateX(50px);
+  opacity: 0;
+}
+
 .image-viewer {
   color: var(--ui-amber);
 }
@@ -97,11 +124,15 @@ function resetClass(obj) {
   display: flex;
   align-items: flex-start;
   margin-bottom: 10px;
+  &:hover {
+    background-color: var(--ui-anthracite);
+  }
 }
 .left {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-left: 10px;
 }
 .actions {
   display: flex;
@@ -127,18 +158,6 @@ function resetClass(obj) {
   }
 }
 
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.3s ease;
-}
-.slide-enter-from {
-  transform: translateX(50px);
-  opacity: 0;
-}
-.slide-leave-to {
-  transform: translateX(-50px);
-  opacity: 0;
-}
 .topk {
   font-size: 12px;
   color: var(--ui-grey);
@@ -162,6 +181,9 @@ function resetClass(obj) {
   .object-row {
     flex-direction: column;
     align-items: flex-start;
+    &:hover {
+      background: none;
+    }
   }
   .actions {
     flex-direction: row;

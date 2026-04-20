@@ -13,17 +13,6 @@ watch(() => props.results, () => {
   currentIndex.value = 0
 })
 
-function prev() {
-  if (currentIndex.value > 0) {
-    currentIndex.value--
-  }
-}
-function next() {
-  if (currentIndex.value < props.results.pred_output.length - 1) {
-    currentIndex.value++
-  }
-}
-
 const showDeleteModal = ref(false)
 const deleteTarget = ref(null)
 
@@ -40,6 +29,21 @@ function confirmDelete() {
   props.results.pred_output[imgIndex].objects.splice(objIndex, 1)
   showDeleteModal.value = false
   deleteTarget.value = null
+}
+
+const direction = ref('next')
+
+function prev() {
+  if (currentIndex.value > 0) {
+    direction.value = 'prev'
+    currentIndex.value--
+  }
+}
+function next() {
+  if (currentIndex.value < props.results.pred_output.length - 1) {
+    direction.value = 'next'
+    currentIndex.value++
+  }
 }
 </script>
 
@@ -60,13 +64,14 @@ function confirmDelete() {
       Nothing to show
     </div>
 
-    <div class="loader" v-else-if="results.status === 'uploading'">
+    <div class="loader" v-else-if="results?.status === 'uploading'">
     </div>
 
-    <div v-else-if="results.status === 'done'">
+    <div v-else-if="results?.status === 'done'">
       <ImageViewer 
         :image="results.pred_output[currentIndex]" 
         :img-index="currentIndex"
+        :direction="direction"
         @request-delete="requestDelete"
       />
     </div>
@@ -77,7 +82,7 @@ function confirmDelete() {
       @cancel="cancelDelete"
     />
 
-    <div v-else-if="results.status === 'novalidinput'">
+    <div v-else-if="results?.status === 'novalidinput'">
       No valid images found.
     </div>
   </div>
