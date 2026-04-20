@@ -15,7 +15,7 @@ from bioclip_classification import classify_boxes
 
 
 
-def process_single_image(fpath, fname, i, job_path, job_id, state):
+def process_single_image(fpath, i, job_path, job_id, state):
     """ Helper to process an individual image """
     img = Image.open(fpath).convert("RGB")
     img_filename = f"img_{i}.jpg"
@@ -49,7 +49,7 @@ def process_single_image(fpath, fname, i, job_path, job_id, state):
         })
 
     return {
-        "image_name": fname,
+        "image_name": os.path.basename(fpath),
         "image_width": img.size[0],
         "image_height": img.size[1],
         "image_url": f"/api/static/{job_id}/{img_filename}",

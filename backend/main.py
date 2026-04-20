@@ -104,7 +104,6 @@ async def upload_zip(
             if fname.lower().endswith((".png", ".jpg", ".jpeg")):
                 img_results = process_single_image(
                     fpath,
-                    fname,
                     i,
                     job_path,
                     job_id,
