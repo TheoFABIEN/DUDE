@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 
 const props = defineProps({
   image: Object,
@@ -40,6 +40,33 @@ function closeZoom(obj) {
   zoomedImage.value = null
 }
 
+const editingRef = ref(null)
+
+function startEdit(obj, event) {
+  if (!obj.original_top_k) {
+    obj.original_top_k = [...obj.top_k]
+  }
+  obj.isEditing = true
+  obj.customLabel = obj.pred
+  nextTick(() => {
+    editingRef.value?.focus()
+    editingRef.value?.select()
+  })
+}
+function validateEdit(obj) {
+  if (!obj.customLabel || obj.customLabel.trim() === '') {
+    cancelEdit(obj)
+    return
+  }
+  obj.pred = obj.customLabel.trim()
+  obj.edited = true
+  obj.isEditing = false
+}
+function cancelEdit(obj) {
+  obj.isEditing = false
+  obj.customLabel = obj.pred
+}
+
 </script>
 
 
@@ -62,7 +89,24 @@ function closeZoom(obj) {
                 @click="openZoom(obj)"
               />
               <div class="info">
-                <strong>{{ obj.pred }}</strong>
+                <div class="label-container">
+                  <strong
+                    v-if="!obj.isEditing"
+                    class="label"
+                    @click="startEdit(obj, $event)"
+                  >
+                    {{ obj.pred }}
+                  </strong>
+                  <input
+                    v-else
+                    ref="editingRef"
+                    v-model="obj.customLabel"
+                    class="label-input"
+                    @blur="validateEdit(obj)"
+                    @keyup.enter="validateEdit(obj)"
+                    @keyup.esc="cancelEdit(obj)"
+                  />
+                </div>
                 <div class="topk">
                   <div v-for="(t,k) in obj.top_k" 
                     :key="k"
@@ -161,6 +205,29 @@ function closeZoom(obj) {
   max-height: 90%;
   object-fit: contain;
   border-radius: 8px;
+}
+
+.label-container {
+  display: inline-block;
+}
+.label {
+  cursor: pointer;
+  color: var(--ui-amber);
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 0.7;
+  }
+}
+.label-input {
+  font-size: inherit;
+  font-weight: bold;
+  color: var(--ui-amber);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--ui-amber);
+  outline: none;
+  min-width: 120px;
 }
 
 .actions {
