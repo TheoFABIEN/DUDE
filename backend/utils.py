@@ -3,6 +3,7 @@ Helper functions used in main.py.
 """
 
 import os
+import re
 import zipfile
 import json
 from io import BytesIO
@@ -14,6 +15,11 @@ from flatbug_detection import predict, predict_cpu
 from bioclip_classification import classify_boxes
 
 
+def natural_sort_key(s):
+    return [
+        int(text) if text.isdigit() else text.lower()
+        for text in re.split(r'(\d+)', s)
+    ]
 
 def process_single_image(fpath, i, job_path, job_id, state):
     """ Helper to process an individual image """

@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 
 from flatbug_detection import load_model, load_model_cpu
 from bioclip_classification import load_classifier
-from utils import process_single_image, generate_coco, generate_default
+from utils import natural_sort_key, process_single_image, generate_coco, generate_default
 
 
 os.makedirs("/tmp/jobs", exist_ok = True)
@@ -99,7 +99,8 @@ async def upload_zip(
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(tmpdir)
 
-        for i, fname in enumerate(os.listdir(tmpdir)):
+        files = sorted(os.listdir(tmpdir), key=natural_sort_key)
+        for i, fname in enumerate(files):
             fpath = os.path.join(tmpdir, fname)
             if fname.lower().endswith((".png", ".jpg", ".jpeg")):
                 img_results = process_single_image(
