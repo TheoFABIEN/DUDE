@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import ImageViewer from './ImageViewer.vue'
 import DeleteModal from './deleteModal.vue'
 
@@ -45,6 +45,24 @@ function next() {
     currentIndex.value++
   }
 }
+
+function handleKey(e) {
+  if (!props.results || props.results.status !== 'done') return
+
+  if (e.key === 'ArrowRight') {
+    next()
+  }
+  if (e.key === 'ArrowLeft') {
+    prev()
+  }
+}
+onMounted(() => {
+  window.addEventListener('keydown', handleKey)
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKey)
+})
+
 </script>
 
 
