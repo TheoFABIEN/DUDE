@@ -38,4 +38,7 @@ function showDownloadModal() {
   gap: 8px;
   padding: 8px 12px;
 }
+.icon {
+  transform: translateY(1px);
+}
 </style>
