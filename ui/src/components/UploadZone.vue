@@ -36,7 +36,10 @@ function onFileChange(event) {
   >
     <span>Drop your zip file here</span>
     <span>OR</span>
-    <label for="dropzoneFile">Select File</label>
+    <label class="file-label" for="dropzoneFile">
+      <img src="@/assets/folderOpen.svg" alt="" class="icon"/>
+      <span>Browse local files</span>
+    </label>
     <input type="file" id="dropzoneFile" @change="onFileChange" accept=".zip" />
   </div>
 </template>
@@ -69,5 +72,10 @@ function onFileChange(event) {
   color: #fff;
   border-color: #fff;
   background-color: var(--ui-amber);
+}
+.file-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>

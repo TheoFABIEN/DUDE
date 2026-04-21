@@ -37,7 +37,7 @@ function closeDownloadModal() {isModalOpen.value = false}
 <style scoped>
 .app-container {
   padding: 20px;
-  max-width: 900px;
+  max-width: 1000px;
   margin: auto;
 }
 </style>

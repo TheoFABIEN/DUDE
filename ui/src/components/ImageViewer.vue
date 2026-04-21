@@ -163,6 +163,7 @@ function cancelEdit(obj) {
   max-width: 400px;
   display: block;
   margin-bottom: 10px;
+  border-radius: 6px;
 }
 
 
