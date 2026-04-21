@@ -16,6 +16,7 @@ from bioclip_classification import classify_boxes
 
 
 def natural_sort_key(s):
+    """ Sort uploaded images based on file name """
     return [
         int(text) if text.isdigit() else text.lower()
         for text in re.split(r'(\d+)', s)
