@@ -1,4 +1,6 @@
 <script setup>
+import { ref } from 'vue'
+
 const props = defineProps({
   image: Object,
   imgIndex: Number,
@@ -29,6 +31,15 @@ function resetClass(obj) {
   }
 }
 
+const zoomedImage = ref(null)
+
+function openZoom(obj) {
+  zoomedImage.value = obj.crop_url
+}
+function closeZoom(obj) {
+  zoomedImage.value = null
+}
+
 </script>
 
 
@@ -48,6 +59,7 @@ function resetClass(obj) {
                 :src="obj.crop_url"
                 class="crop"
                 loading="lazy"
+                @click="openZoom(obj)"
               />
               <div class="info">
                 <strong>{{ obj.pred }}</strong>
@@ -75,33 +87,28 @@ function resetClass(obj) {
       </div>
     </transition>
   </div>
+  <div v-if="zoomedImage" class="zoom-overlay" @click="closeZoom">
+    <img :src="zoomedImage" class="zoomed-image" />
+  </div>
 </template>
 
 
 <style scoped>
 
 .slide-left-enter-active,
-.slide-left-leave-active {
-  transition: all 0.3s ease;
-}
-.slide-left-enter-from {
-  transform: translateX(50px);
-  opacity: 0;
-}
-.slide-left-leave-to {
-  transform: translateX(-50px);
-  opacity: 0;
-}
+.slide-left-leave-active,
 .slide-right-enter-active,
 .slide-right-leave-active {
   transition: all 0.3s ease;
 }
-.slide-right-enter-from {
-  transform: translateX(-50px);
-  opacity: 0;
-}
+.slide-left-enter-from,
 .slide-right-leave-to {
   transform: translateX(50px);
+  opacity: 0;
+}
+.slide-left-leave-to,
+.slide-right-enter-from {
+  transform: translateX(-50px);
   opacity: 0;
 }
 
@@ -113,13 +120,8 @@ function resetClass(obj) {
   display: block;
   margin-bottom: 10px;
 }
-.crop {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  margin-right: 10px;
-  border: 1px solid #ccc;
-}
+
+
 .object-row {
   display: flex;
   align-items: flex-start;
@@ -133,7 +135,34 @@ function resetClass(obj) {
   align-items: center;
   gap: 10px;
   margin-left: 10px;
+  img {
+    cursor: zoom-in;
+  }
 }
+.crop {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+}
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5000;
+  cursor: zoom-out;
+}
+.zoomed-image {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
 .actions {
   display: flex;
   flex-direction: column;
