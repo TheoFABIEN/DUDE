@@ -79,7 +79,7 @@ onUnmounted(() => {
     </div>
 
     <div v-if="!results">
-      Nothing to show
+      Nothing here yet...
     </div>
 
     <div class="loader" v-else-if="results?.status === 'uploading'">
