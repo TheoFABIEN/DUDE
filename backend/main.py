@@ -84,7 +84,7 @@ async def upload_zip(
     background_tasks.add_task(cleanup_old_jobs)
 
     if not file.filename.endswith(".zip"):
-        return JSONResponse(status_code=400, content={"error": "Only zip file format is accepted"})
+        return {"status": "notzipformat"}
 
     job_id = str(uuid.uuid4())
     job_path = os.path.join(output_dir, job_id)

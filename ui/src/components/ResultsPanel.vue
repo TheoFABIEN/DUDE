@@ -103,6 +103,9 @@ onUnmounted(() => {
     <div v-else-if="results?.status === 'novalidinput'">
       No valid images found.
     </div>
+    <div v-else-if="results?.status === 'notzipformat'">
+      Dropped file is in the wrong format. Please upload a .zip file. 
+    </div>
   </div>
 </template>
 
