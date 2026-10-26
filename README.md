@@ -9,6 +9,16 @@
 
 This app leverages Flatbug and BioClip2 to detect and identify insect species.
 
+- Upload images in .zip format
+- Let the algorithm detect and identify insects for you
+- Edit annotations and delete false positive if needed
+- Download the results using a standard annotation format
+
+<p align="center">
+  <a href="Demo_images/DUDE_demo_1.png">
+    <img src="Demo_images/DUDE_demo_1.png" width="400">
+  </a>
+</p>
 
 ## Quick start
 
