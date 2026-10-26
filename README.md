@@ -14,9 +14,14 @@ This app leverages Flatbug and BioClip2 to detect and identify insect species.
 - Edit annotations and delete false positive if needed
 - Download the results using a standard annotation format
 
+
 <p align="center">
   <a href="Demo_images/DUDE_demo_1.png">
-    <img src="Demo_images/DUDE_demo_1.png" width="400">
+    <img
+      src="Demo_images/DUDE_demo_1.png"
+      width="400"
+      style="border: 1px solid #8b949e; border-radius: 6px; padding: 4px;"
+    >
   </a>
 </p>
 
