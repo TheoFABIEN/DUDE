@@ -3,6 +3,10 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import ImageViewer from './ImageViewer.vue'
 import DeleteModal from './deleteModal.vue'
 
+const emits = defineEmits([
+  'openSettingsModal'
+])
+
 const props = defineProps({
   results: Object
 })
@@ -12,6 +16,10 @@ const currentIndex = ref(0)
 watch(() => props.results, () => {
   currentIndex.value = 0
 })
+
+function showSettingsModal() {
+  emits('openSettingsModal')
+}
 
 const showDeleteModal = ref(false)
 const deleteTarget = ref(null)
@@ -69,7 +77,14 @@ onUnmounted(() => {
 <template>
   <div class="results-panel">
     <div class="header">
-      <h2>Results</h2>
+      <div class="header-left">
+        <h2>Results</h2>
+        <button id="settings-button" 
+          v-if="props.results?.status=='done'"
+          @click="showSettingsModal">
+          Settings
+        </button>
+      </div>
 
       <div v-if="results?.status === 'done'" class="nav-buttons">
         <button @click="prev">&lt;</button>
@@ -115,6 +130,11 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
 }
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
 .nav-buttons {
   display: flex;
   gap: 10px;
@@ -143,4 +163,14 @@ button {
   content:"Loading..."
 }
 @keyframes l2 {to{background-size: 100% 3px}}
+
+#settings-button {
+  background-color: var(--ui-darkblue);
+  color: var(--ui-grey);
+  border: 2px dashed var(--ui-grey);
+  &:hover {
+    color: var(--ui-pearl);
+    border-color: var(--ui-pearl);
+  }
+}
 </style>

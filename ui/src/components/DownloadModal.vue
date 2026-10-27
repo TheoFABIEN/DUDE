@@ -33,7 +33,7 @@ async function download() {
 
 
 <template>
-    <div class="overlay" @click.self="close">
+    <div class="modal-overlay" @click.self="close">
         <div class="modal">
             <h3>Choose download format</h3>
             <select v-model="dlFormat">
@@ -51,27 +51,13 @@ async function download() {
 
 <style scoped>
 
-.overlay {
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,0.6);
-display: flex;
-justify-content: center;
-align-items: center;
-z-index: 2000;
-}
 .modal {
     display: flex;
     flex-direction: column;
     width: 350px;
     height: 200px;
-    max-width: 90%;
-    max-height: 90%;
     justify-content: center;
     align-items: center;
-    z-index: 2000;
-    background-color: var(--ui-anthracite);
-    border-radius: 12px;
     select {
         width: 100%;
         padding: 6px;

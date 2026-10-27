@@ -32,3 +32,22 @@ button, label {
 h1 {
   font-family: 'Ubuntu Mono', sans-serif;
 }
+
+
+.modal {
+  background-color: var(--ui-anthracite);
+  border-radius: 10px;
+  max-width: 90%;
+  max-height: 90%;
+  z-index: 3000;
+}
+
+.modal-overlay {
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,0.6);
+display: flex;
+justify-content: center;
+align-items: center;
+z-index: 2000;
+}

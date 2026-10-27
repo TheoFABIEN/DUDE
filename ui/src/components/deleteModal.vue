@@ -30,21 +30,8 @@ const emit = defineEmits(['confirm', 'cancel'])
   background: #d9363e;
 }
 
-/* modal */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 3000;
-}
-
 .modal {
-  background: var(--ui-anthracite);
   padding: 20px;
-  border-radius: 10px;
   width: 300px;
   text-align: center;
 }
