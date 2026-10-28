@@ -37,7 +37,7 @@ After initial configuration, the app can be accessed locally here: [http://local
 
 <h3>GPU acceleration</h3>
 
-For inference to run properly, it is recommended to have an NVIDIA GPU with CUDA installed on the machine running the service. For more informations about CUDA and how to install it: [https://letmegooglethat.com/?q=cuda+installation](https://letmegooglethat.com/?q=cuda+installation)
+For inference to run properly, it is recommended to have an NVIDIA GPU with [CUDA](https://developer.nvidia.com/cuda-downloads) installed on the machine running the service. You will also need to install the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) which is needed to run GPU-accelerated containers.
 
 <h3>Using</h3>
 
