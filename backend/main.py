@@ -58,9 +58,10 @@ def cleanup_old_jobs(max_age_seconds = 18000, output_dir="/tmp/jobs"):
 async def startup():
     """ Initializes models and sets application state to ready. """
     print("Loading models...")
-    app.state.detector = load_model("cuda:0")
+    device = "cuda:0" if cuda.is_available() else "cpu"
+    app.state.detector = load_model(device)
     app.state.detector_cpu = load_model_cpu()
-    app.state.classifier = load_classifier(device="cuda" if cuda.is_available else "cpu")
+    app.state.classifier = load_classifier(device)
 
     app.state.ready = True
     print("READY")
