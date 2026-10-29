@@ -7,14 +7,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /workspace
 
-RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    python3 -m pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu118 && \
-    python3 -m pip install --no-cache-dir fastapi[all] pillow
+RUN python3 -m pip install --no-cache-dir --root-user-action=ignore --upgrade pip setuptools wheel
 
-RUN git clone https://github.com/darsa-group/flat-bug.git /flat-bug && \
-    python3 -m pip install --no-cache-dir -e /flat-bug
+COPY requirements.txt ./requirements.txt
 
-RUN python3 -m pip install pybioclip==2.1.3
+RUN python3 -m pip install --no-cache-dir --root-user-action=ignore -r requirements.txt
 
 COPY . .
 
