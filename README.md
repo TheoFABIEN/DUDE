@@ -53,8 +53,14 @@ Open the `.env` and paste your token after `HF_TOKEN=`.
 
 **3. Install using docker compose**
 
+If you want to use your GPU:
 ```
 docker compose up -d
+```
+
+If you only use the CPU:
+```
+docker compose -f compose-cpu.yml up -d
 ```
 
 **4. Wait for the models to load, then open the app**

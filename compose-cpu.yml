@@ -1,0 +1,24 @@
+services:
+  api:
+    build: ./backend
+    container_name: detectoclassif_back
+    volumes:
+      - ./backend:/app
+      - /data/tmp:/tmp/jobs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 300s
+    environment:
+      - HF_TOKEN=${HF_TOKEN:-}
+
+  web:
+    build: ./ui
+    container_name: detectoclassif_front
+    ports:
+      - 3000:80
+    depends_on:
+      api:
+        condition: service_healthy
